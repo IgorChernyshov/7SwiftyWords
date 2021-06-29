@@ -10,17 +10,18 @@ import UIKit
 final class ViewController: UIViewController {
 
 	// MARK: - Subviews
-	var cluesLabel: UILabel!
-	var answersLabel: UILabel!
-	var currentAnswer: UITextField!
-	var scoreLabel: UILabel!
-	var letterButtons = [UIButton]()
+	private var cluesLabel: UILabel!
+	private var answersLabel: UILabel!
+	private var currentAnswer: UITextField!
+	private var scoreLabel: UILabel!
+	private var letterButtons = [UIButton]()
 
 	// MARK: - Properties
-	var activatedButtons = [UIButton]()
-	var solutions = [String]()
-	var level = 1
-	var score = 0 {
+	private var activatedButtons = [UIButton]()
+	private var solutions = [String]()
+	private var level = 1
+	private var correctAnswers = 0
+	private var score = 0 {
 		didSet {
 			scoreLabel.text = "Score: \(score)"
 		}
@@ -28,6 +29,16 @@ final class ViewController: UIViewController {
 
 	// MARK: - Lifecycle
 	override func loadView() {
+		configureUI()
+	}
+
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		loadLevel()
+	}
+
+	// MARK: - UI Configuration
+	private func configureUI() {
 		view = UIView()
 		view.backgroundColor = .white
 
@@ -42,7 +53,7 @@ final class ViewController: UIViewController {
 		cluesLabel.font = UIFont.systemFont(ofSize: 24)
 		cluesLabel.text = "CLUES"
 		cluesLabel.numberOfLines = 0
-		//		cluesLabel.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
+		cluesLabel.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
 		view.addSubview(cluesLabel)
 
 		answersLabel = UILabel()
@@ -51,7 +62,7 @@ final class ViewController: UIViewController {
 		answersLabel.text = "ANSWERS"
 		answersLabel.numberOfLines = 0
 		answersLabel.textAlignment = .right
-		//		answersLabel.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
+		answersLabel.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
 		view.addSubview(answersLabel)
 
 		currentAnswer = UITextField()
@@ -76,6 +87,10 @@ final class ViewController: UIViewController {
 
 		let buttonsView = UIView()
 		buttonsView.translatesAutoresizingMaskIntoConstraints = false
+		buttonsView.layer.borderWidth = 2.0
+		buttonsView.layer.borderColor = UIColor.lightGray.cgColor
+		buttonsView.layer.cornerRadius = 8.0
+		buttonsView.layer.masksToBounds = true
 		view.addSubview(buttonsView)
 
 		NSLayoutConstraint.activate([
@@ -104,7 +119,7 @@ final class ViewController: UIViewController {
 			clearButton.heightAnchor.constraint(equalToConstant: 44),
 
 			buttonsView.widthAnchor.constraint(equalToConstant: 750),
-			buttonsView.heightAnchor.constraint(greaterThanOrEqualToConstant: 320),
+			buttonsView.heightAnchor.constraint(equalToConstant: 320),
 			buttonsView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 			buttonsView.topAnchor.constraint(equalTo: submitButton.bottomAnchor, constant: 20),
 			buttonsView.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor, constant: -20)
@@ -127,11 +142,6 @@ final class ViewController: UIViewController {
 		}
 	}
 
-	override func viewDidLoad() {
-		super.viewDidLoad()
-		loadLevel()
-	}
-
 	// MARK: - Selectors
 	@objc private func letterTapped(_ sender: UIButton) {
 		guard let buttonTitle = sender.titleLabel?.text else { return }
@@ -141,8 +151,11 @@ final class ViewController: UIViewController {
 	}
 
 	@objc private func submitTapped(_ sender: UIButton) {
-		guard let answerText = currentAnswer.text,
-			  let solutionPosition = solutions.firstIndex(of: answerText) else { return }
+		guard let answerText = currentAnswer.text else { return }
+		guard let solutionPosition = solutions.firstIndex(of: answerText) else {
+			score -= 1
+			return showWrongAnswerAlert()
+		}
 
 		activatedButtons.removeAll()
 
@@ -152,8 +165,9 @@ final class ViewController: UIViewController {
 
 		currentAnswer.text = ""
 		score += 1
+		correctAnswers += 1
 
-		if score % 7 == 0 {
+		if correctAnswers == 7 {
 			let alertController = UIAlertController(title: "Well done!", message: "Are you ready for the next level?", preferredStyle: .alert)
 			alertController.addAction(UIAlertAction(title: "Let's go!", style: .default, handler: levelUp))
 			present(alertController, animated: true)
@@ -170,6 +184,7 @@ final class ViewController: UIViewController {
 
 	private func levelUp(action: UIAlertAction) {
 		level += 1
+		correctAnswers = 0
 		solutions.removeAll(keepingCapacity: true)
 
 		loadLevel()
@@ -177,6 +192,15 @@ final class ViewController: UIViewController {
 		for button in letterButtons {
 			button.isHidden = false
 		}
+	}
+
+	// MARK: - Alerts
+	private func showWrongAnswerAlert() {
+		let alertController = UIAlertController(title: "Wrong guess", message: "Your word doesn't answer any of the questions", preferredStyle: .alert)
+		alertController.addAction(UIAlertAction(title: "Try again", style: .default) { [weak self] _ in
+			self?.clearTapped(UIButton())
+		})
+		present(alertController, animated: true)
 	}
 
 	// MARK: - Game Logic
