@@ -122,6 +122,7 @@ final class ViewController: UIViewController {
 				letterButton.frame = frame
 				buttonsView.addSubview(letterButton)
 				letterButtons.append(letterButton)
+				letterButton.addTarget(self, action: #selector(letterTapped), for: .touchUpInside)
 			}
 		}
 	}
