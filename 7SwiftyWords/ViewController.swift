@@ -209,36 +209,40 @@ final class ViewController: UIViewController {
 		var solutionString = ""
 		var letterBits = [String]()
 
-		if let levelFileURL = Bundle.main.url(forResource: "level\(level)", withExtension: "txt") {
-			if let levelContents = try? String(contentsOf: levelFileURL) {
-				var lines = levelContents.components(separatedBy: "\n")
-				lines.shuffle()
+		DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+			guard let self = self,
+				  let levelFileURL = Bundle.main.url(forResource: "level\(self.level)", withExtension: "txt"),
+				  let levelContents = try? String(contentsOf: levelFileURL) else { return }
 
-				for (index, line) in lines.enumerated() {
-					let parts = line.components(separatedBy: ": ")
-					let answer = parts[0]
-					let clue = parts[1]
+			var lines = levelContents.components(separatedBy: "\n")
+			lines.shuffle()
 
-					clueString += "\(index + 1). \(clue)\n"
+			for (index, line) in lines.enumerated() {
+				let parts = line.components(separatedBy: ": ")
+				let answer = parts[0]
+				let clue = parts[1]
 
-					let solutionWord = answer.replacingOccurrences(of: "|", with: "")
-					solutionString += "\(solutionWord.count) letters\n"
-					solutions.append(solutionWord)
+				clueString += "\(index + 1). \(clue)\n"
 
-					let bits = answer.components(separatedBy: "|")
-					letterBits += bits
+				let solutionWord = answer.replacingOccurrences(of: "|", with: "")
+				solutionString += "\(solutionWord.count) letters\n"
+				self.solutions.append(solutionWord)
+
+				let bits = answer.components(separatedBy: "|")
+				letterBits += bits
+			}
+
+			DispatchQueue.main.async {
+				self.cluesLabel.text = clueString.trimmingCharacters(in: .whitespacesAndNewlines)
+				self.answersLabel.text = solutionString.trimmingCharacters(in: .whitespacesAndNewlines)
+
+				letterBits.shuffle()
+
+				guard letterBits.count == self.letterButtons.count else { return }
+				for index in 0 ..< self.letterButtons.count {
+					self.letterButtons[index].setTitle(letterBits[index], for: .normal)
 				}
 			}
-		}
-
-		cluesLabel.text = clueString.trimmingCharacters(in: .whitespacesAndNewlines)
-		answersLabel.text = solutionString.trimmingCharacters(in: .whitespacesAndNewlines)
-
-		letterBits.shuffle()
-
-		guard letterBits.count == letterButtons.count else { return }
-		for index in 0 ..< letterButtons.count {
-			letterButtons[index].setTitle(letterBits[index], for: .normal)
 		}
 	}
 }
