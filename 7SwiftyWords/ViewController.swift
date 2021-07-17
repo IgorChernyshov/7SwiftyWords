@@ -130,8 +130,9 @@ final class ViewController: UIViewController {
 
 		for row in 0..<4 {
 			for column in 0..<5 {
-				let letterButton = UIButton(type: .system)
+				let letterButton = UIButton(type: .custom)
 				letterButton.titleLabel?.font = UIFont.systemFont(ofSize: 36)
+				letterButton.setTitleColor(.systemBlue, for: .normal)
 				letterButton.setTitle("WWW", for: .normal)
 				let frame = CGRect(x: column * buttonWidth, y: row * buttonHeight, width: buttonWidth, height: buttonHeight)
 				letterButton.frame = frame
@@ -147,7 +148,9 @@ final class ViewController: UIViewController {
 		guard let buttonTitle = sender.titleLabel?.text else { return }
 		currentAnswer.text = currentAnswer.text?.appending(buttonTitle)
 		activatedButtons.append(sender)
-		sender.isHidden = true
+		UIView.animate(withDuration: 0.3) {
+			sender.alpha = 0
+		}
 	}
 
 	@objc private func submitTapped(_ sender: UIButton) {
@@ -176,8 +179,8 @@ final class ViewController: UIViewController {
 
 	@objc private func clearTapped(_ sender: UIButton) {
 		currentAnswer.text = ""
-		for button in activatedButtons {
-			button.isHidden = false
+		UIView.animate(withDuration: 0.3) {
+			self.letterButtons.forEach { $0.alpha = 1 }
 		}
 		activatedButtons.removeAll()
 	}
@@ -189,8 +192,8 @@ final class ViewController: UIViewController {
 
 		loadLevel()
 
-		for button in letterButtons {
-			button.isHidden = false
+		UIView.animate(withDuration: 0.3) {
+			self.letterButtons.forEach { $0.alpha = 1 }
 		}
 	}
 
